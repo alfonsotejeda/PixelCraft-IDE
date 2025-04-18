@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PixelWalle.Interpreter.Lexer;
 
@@ -11,6 +12,75 @@ public class Lexer
     private int _position;
     private char _currentChar;
     private List<Token> tokens = new List<Token>();
+    private static readonly Dictionary<string, TokenType> Instructions = new()
+    {
+        { "Spawn", TokenType.Spawn },
+        { "Color", TokenType.Color },
+        { "Size", TokenType.Size },
+        { "DrawLine", TokenType.DrawLine },
+        { "DrawCircle", TokenType.DrawCircle },
+        { "DrawRectangle", TokenType.DrawRectangle },
+        { "Fill", TokenType.Fill },
+        { "GoTo", TokenType.GoTo }
+    };
+    private static readonly Dictionary<string, TokenType> Functions = new()
+    {
+        { "GetActualX", TokenType.GetActualX },
+        { "GetActualY", TokenType.GetActualY },
+        { "GetCanvasSize", TokenType.GetCanvasSize },
+        { "GetColorCount", TokenType.GetColorCount },
+        { "IsBrushColor", TokenType.IsBrushColor },
+        { "IsBrushSize", TokenType.IsBrushSize },
+        { "IsCanvasColor", TokenType.IsCanvasColor }
+    };
+    private static readonly Dictionary<string, TokenType> Literals = new()
+    {
+        { "true", TokenType.Boolean },
+        { "false", TokenType.Boolean }
+    };
+    private static readonly List<LexRule> LexRules = new()
+    {
+        // Palabras clave y funciones: se resolverán dinámicamente por diccionarios
+        new LexRule(@"[a-zA-ZñÑ_][a-zA-ZñÑ0-9_-]*", TokenType.Identifier, resolver: ResolveKeywordOrIdentifier),
+
+        // Números enteros
+        new LexRule(@"\d+", TokenType.Number),
+
+
+        // Operadores dobles
+        new LexRule(@"\*\*", TokenType.Power),
+        new LexRule(@"==", TokenType.Equal),
+        new LexRule(@">=", TokenType.GreaterEqual),
+        new LexRule(@"<=", TokenType.LessEqual),
+        new LexRule(@"<-", TokenType.Assign),
+        new LexRule(@"&&", TokenType.And),
+        new LexRule(@"\|\|", TokenType.Or),
+
+        // Operadores simples
+        new LexRule(@"\+", TokenType.Plus),
+        new LexRule("-", TokenType.Minus),
+        new LexRule(@"\*", TokenType.Times),
+        new LexRule("/", TokenType.Divide),
+        new LexRule("%", TokenType.Modulo),
+        new LexRule(">", TokenType.Greater),
+        new LexRule("<", TokenType.Less),
+
+        // Símbolos
+        new LexRule(@"\(", TokenType.LeftParenthesis),
+        new LexRule(@"\)", TokenType.RightParenthesis),
+        new LexRule(@"\[", TokenType.LeftBracket),
+        new LexRule(@"\]", TokenType.RightBracket),
+        new LexRule(",", TokenType.Comma),
+
+        // Saltos de línea
+        new LexRule(@"\n", TokenType.NewLine),
+
+        // Espacios (pueden omitirse si decides ignorarlos)
+        new LexRule(@"[ \t\r]+", TokenType.Whitespace),
+        
+        // Strings
+        new LexRule("\"(?:[^\"\\\\]|\\\\.)*\"", TokenType.String)
+    };
     
     public Lexer(string source)
     {
@@ -24,7 +94,6 @@ public class Lexer
 
     public List<Token> Tokenize()
     {
-        
         while (!IsAtEnd())
         {
             switch (_currentChar)
@@ -47,14 +116,18 @@ public class Lexer
                     Advance();
                     break;
                 case '*':
-                   AddDoubleOrSingle('*', "**", TokenType.Power, "*", TokenType.Times); 
-                   break;
+                    AddDoubleOrSingle('*', "**", TokenType.Power, "*", TokenType.Times); 
+                    break;
                 case '/':
                     tokens.Add(new Token("/", TokenType.Divide, _line, _column));
                     Advance();
                     break;
                 case '%':
                     tokens.Add(new Token("%", TokenType.Modulo, _line, _column));
+                    Advance();
+                    break;
+                case ',':
+                    tokens.Add(new Token(",", TokenType.Comma, _line, _column));
                     Advance();
                     break;
                 case '=':
@@ -157,7 +230,106 @@ public class Lexer
         
         return tokens;
     }
+
+    public List<Token> TokenizeWithRegex()
+    {
+        int line = _line;
+        int column = _column;
+
+        while (!IsAtEnd())
+        {
+            string remaining = _source[_position..];
+            LexRule? matchedRule = null;
+            Match? match = null;
+            foreach (var rule in LexRules)
+            {
+                var m = rule.Pattern.Match(remaining);
+                if (m.Success && m.Index == 0)
+                {
+                    if (match == null || m.Length > match.Length)
+                    {
+                        matchedRule = rule;
+                        match = m;
+                    }
+                }
+            }
+            if (match == null || matchedRule == null)
+            {
+                throw new LexerException($"Carácter inesperado '{_source[_position]}'", line, column);
+            }
+            string lexeme = match.Value;
+            TokenType type = matchedRule.CustomResolver?.Invoke(lexeme) ?? matchedRule.Type;
+            // if (matchedRule.CustomResolver != null)
+            // {
+            //     type = matchedRule.CustomResolver.Invoke(lexeme);
+            // }
+            // else
+            // {
+            //     type = matchedRule.Type;
+            // }
+            
+            Console.WriteLine($"LEXEME: '{lexeme}' | TYPE: {type} | Position: {_position} | Source at lookahead: '{(_position + lexeme.Length < _source.Length ? _source[_position + lexeme.Length].ToString() : "EOF")}'");
+            //Exceptions
+            if (type == TokenType.Number && _position < _source.Length && char.IsLetter(_source[_position]))
+            {
+                string fragment = _source.Substring(_position - lexeme.Length, lexeme.Length + 1);
+                throw new LexerException($"Un identificador no puede comenzar con un número: '{fragment}'", line, column);
+            }
+            if (type == TokenType.Equal && lexeme == "=")
+            {
+                throw new LexerException($"Uso inválido de '='. Quizás quisiste escribir '=='", line, column);
+            }
+            if (type == TokenType.And && lexeme == "&")
+            {
+                throw new LexerException($"Uso inválido de '&'. Quizás quisiste escribir '&&'", line, column);
+            }
+            if (type == TokenType.Or && lexeme == "|")
+            {
+                throw new LexerException($"Uso inválido de '|'. Quizás quisiste escribir '||'", line, column);
+            }
+            
+            int lookahead = _position + lexeme.Length;
+            if (type == TokenType.Identifier && lookahead < _source.Length && _source[lookahead] == '(')
+            {
+                Console.WriteLine($"👉 FUNCION sospechosa: '{lexeme}' en columna {column} línea {line}");
+                var sugerencia = SugerenciaCercana(lexeme);
+                if (sugerencia != null)
+                {
+                    throw new LexerException($"Se esperaba una palabra clave o función, pero se encontró '{lexeme}'. ¿Quizás quisiste escribir '{sugerencia}'?", line, column);
+                }
+                else
+                {
+                    throw new LexerException($"'{lexeme}' no es una palabra clave reconocida.", line, column);
+                }
+            }
+            
+            if (type != TokenType.Whitespace)
+            {
+                tokens.Add(new Token(lexeme, type, line, column));
+            }
+            _position += lexeme.Length;
+            for (int i = 0; i < lexeme.Length; i++)
+            {
+                if (lexeme[i] == '\n')
+                {
+                    line++;
+                    column = 1;
+                }
+                else
+                {
+                    column++;
+                }
+            }
+            
+        }
+
+        return tokens;
+    }
+
     
+    
+    
+
     private void Advance()
     {
         if (_currentChar == '\n')
@@ -217,9 +389,11 @@ public class Lexer
             Advance();
         }
         string wordStr = text.ToString();
+
         if (Instructions.TryGetValue(wordStr, out var tokenType) || Functions.TryGetValue(wordStr, out tokenType) || Literals.TryGetValue(wordStr, out tokenType))
         {
             return new Token(wordStr, tokenType, _line, startColumn);
+            
         }
         
         // Paréntesis abierto => palabra reservada
@@ -248,13 +422,19 @@ public class Lexer
                 throw new LexerException($"Palabra clave no reconocida: '{wordStr}'", _line, startColumn);
             }
         }
-        else if (_currentChar == '\n')
-        {
-            return new Token(wordStr, TokenType.Etiquette, _line, startColumn);
-        }
+        // else if (_currentChar == '\n')
+        // {
+        //     return new Token(wordStr, TokenType.Etiquette, _line, startColumn);
+        // }
         return new Token(wordStr, TokenType.Identifier, _line, startColumn);
     }
-    
+    private static TokenType ResolveKeywordOrIdentifier(string lexeme)
+    {
+        if (Instructions.TryGetValue(lexeme, out var instr)) return instr;
+        if (Functions.TryGetValue(lexeme, out var func)) return func;
+        if (Literals.TryGetValue(lexeme, out var lit)) return lit;
+        return TokenType.Identifier;
+    }
     private int Levenshtein(string s, string t)
     {
         int n = s.Length;
@@ -281,32 +461,25 @@ public class Lexer
 
         return d[n, m];
     }
-    private static readonly Dictionary<string, TokenType> Instructions = new()
+    private string? SugerenciaCercana(string input)
     {
-        { "Spawn", TokenType.Spawn },
-        { "Color", TokenType.Color },
-        { "Size", TokenType.Size },
-        { "DrawLine", TokenType.DrawLine },
-        { "DrawCircle", TokenType.DrawCircle },
-        { "DrawRectangle", TokenType.DrawRectangle },
-        { "Fill", TokenType.Fill },
-        { "GoTo", TokenType.GoTo }
-    };
-    private static readonly Dictionary<string, TokenType> Functions = new()
-    {
-        { "GetActualX", TokenType.GetActualX },
-        { "GetActualY", TokenType.GetActualY },
-        { "GetCanvasSize", TokenType.GetCanvasSize },
-        { "GetColorCount", TokenType.GetColorCount },
-        { "IsBrushColor", TokenType.IsBrushColor },
-        { "IsBrushSize", TokenType.IsBrushSize },
-        { "IsCanvasColor", TokenType.IsCanvasColor }
-    };
-    private static readonly Dictionary<string, TokenType> Literals = new()
-    {
-        { "true", TokenType.Boolean },
-        { "false", TokenType.Boolean }
-    };
+        const int umbral = 2; // distancia máxima aceptada
+        string? sugerencia = null;
+        int mejorDistancia = int.MaxValue;
+
+        foreach (var palabra in Instructions.Keys.Concat(Functions.Keys).Concat(Literals.Keys))
+        {
+            int dist = Levenshtein(input, palabra);
+            if (dist < mejorDistancia && dist <= umbral)
+            {
+                mejorDistancia = dist;
+                sugerencia = palabra;
+            }
+        }
+
+        return sugerencia;
+    }
+   
     
 }
 

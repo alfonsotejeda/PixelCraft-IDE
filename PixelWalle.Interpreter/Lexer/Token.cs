@@ -2,14 +2,14 @@ namespace PixelWalle.Interpreter.Lexer;
 
 public class Token
 {
-    public string? Value { get; private set; }
+    public string? Lexeme { get; private set; }
     public TokenType Type { get; private set; }
     public int Line { get; private set; }
     public int Column { get; private set; }
 
     public Token(string? value, TokenType type, int line, int column)
     {
-        this.Value = value;
+        this.Lexeme = value;
         this.Type = type;
         this.Line = line;
         this.Column = column;
@@ -17,7 +17,7 @@ public class Token
     
     public override string ToString()
     {
-        return $"Token: {Type}, Value: {Value}, Line: {Line}, Column: {Column}";
+        return $"Token: {Type}, Value: {Lexeme}, Line: {Line}, Column: {Column}";
     }
 }
 
@@ -38,8 +38,9 @@ public enum TokenType
     // Indentifiers
     Number,
     Identifier, //or variable name
-    Etiquette,
+    // Etiquette,
     Boolean,
+    String,
     
     // Operators
     Plus,
@@ -74,6 +75,8 @@ public enum TokenType
     LeftBracket,
     RightBracket,
     NewLine,
+    Comma,
+    Whitespace,
     
     // Special tokens
     EndOfFile,
