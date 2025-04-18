@@ -3,3 +3,11 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+PixelWalle.Interpreter.sln.DotSettings.user
+.idea/.idea.PixelWalle.Interpreter/.idea/.gitignore
+.idea/.idea.PixelWalle.Interpreter/.idea/encodings.xml
+.idea/.idea.PixelWalle.Interpreter/.idea/indexLayout.xml
+.idea/.idea.PixelWalle.Interpreter/.idea/vcs.xml
+PixelWalle.Interpreter/Lexer/RegexLexer.cs
+PixelWalle.Tests/LexerTests.cs
+PixelWalle.Tests/PixelWalle.Tests.csproj
