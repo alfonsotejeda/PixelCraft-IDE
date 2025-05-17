@@ -76,7 +76,7 @@ public class Lexer
         new LexRule(@"\n", TokenType.NewLine),
 
         // Espacios (pueden omitirse si decides ignorarlos)
-        new LexRule(@"[ \t\r]+", TokenType.Whitespace),
+        new LexRule(@"\s+", TokenType.Whitespace),
         
         // Strings
         new LexRule("\"(?:[^\"\\\\]|\\\\.)*\"", TokenType.String)
@@ -270,9 +270,10 @@ public class Lexer
             
             Console.WriteLine($"LEXEME: '{lexeme}' | TYPE: {type} | Position: {_position} | Source at lookahead: '{(_position + lexeme.Length < _source.Length ? _source[_position + lexeme.Length].ToString() : "EOF")}'");
             //Exceptions
-            if (type == TokenType.Number && _position < _source.Length && char.IsLetter(_source[_position]))
+            if (type == TokenType.Number && _position+1 < _source.Length && char.IsLetter(_source[_position+1]))
             {
-                string fragment = _source.Substring(_position - lexeme.Length, lexeme.Length + 1);
+                string fragment = _source.Substring(_position+1 - lexeme.Length, lexeme.Length + 1);
+                Console.WriteLine($"Exception caught: {fragment}");
                 throw new LexerException($"Un identificador no puede comenzar con un número: '{fragment}'", line, column);
             }
             if (type == TokenType.Equal && lexeme == "=")
@@ -322,7 +323,7 @@ public class Lexer
             }
             
         }
-
+        tokens.Add(new Token("", TokenType.EndOfFile, line, column));
         return tokens;
     }
 

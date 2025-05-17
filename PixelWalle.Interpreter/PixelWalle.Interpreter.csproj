@@ -7,8 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="AST\" />
-      <Folder Include="Parser\" />
       <Folder Include="RunTime\" />
       <Folder Include="UI\" />
     </ItemGroup>
