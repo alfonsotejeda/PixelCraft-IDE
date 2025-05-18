@@ -21,43 +21,28 @@ public class Parser
             Advance();
         
         var statements = new List<AstNode>();
-
-        // Paso 1: Verificar que el programa comience con Spawn
-        if (!Check(TokenType.Spawn))
-            throw new ParserException("El programa debe comenzar con la instrucción 'Spawn(x, y)'", Current.Line, Current.Column);
-
-        // Paso 2: Parsear el nodo Spawn
-        var spawnNode = ParseSpawn();
-        statements.Add(spawnNode);
-        
-
-        // Paso 3: Parsear el resto del programa
         while (!IsAtEnd())
         {
             while (Check(TokenType.NewLine))
                 Advance();
-            // Validar que no aparezca otro Spawn
-            if (Check(TokenType.Spawn))
-                throw new ParserException("La instrucción 'Spawn' solo puede usarse una vez, al inicio del programa.", Current.Line, Current.Column);
-
-            // Aquí luego llamaremos a ParseStatement()
             if (!IsAtEnd())
                 statements.Add(ParseStatement());
         }
 
-        return new ProgramNode(statements, spawnNode.Line, spawnNode.Column);
+        return new ProgramNode(statements, statements[0].Line, statements[0].Column);
     }
     private AstNode ParseStatement()
     {
+        if (Check(TokenType.Spawn))
+            return ParseSpawn();
         if (IsFunctionName(Current.Type))
             return ParseFunctionCall();
         
         if (Check(TokenType.Identifier))
         {
-            // 🧠 Miro el siguiente token sin consumir
             if (Peek().Type == TokenType.Assign)
                 return ParseAssignment();
-            else if (Peek().Type == TokenType.NewLine || Peek().Type == TokenType.LeftBracket)
+            else if (Peek().Type == TokenType.NewLine || Peek().Type == TokenType.LeftBracket || Peek().Type == TokenType.EndOfFile)
                 return ParseLabel();
             else
                 throw new ParserException(
