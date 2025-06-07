@@ -34,6 +34,7 @@ public enum TokenType
     DrawRectangle,
     Fill,
     GoTo,
+    SetCursor,
     
     // Indentifiers
     Number,

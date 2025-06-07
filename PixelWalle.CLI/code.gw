@@ -1,0 +1,3 @@
+Spawn(1, 1)
+Color("Blue")
+DrawLine(1, 3)

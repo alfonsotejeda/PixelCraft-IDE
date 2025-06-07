@@ -21,7 +21,8 @@ public class Lexer
         { "DrawCircle", TokenType.DrawCircle },
         { "DrawRectangle", TokenType.DrawRectangle },
         { "Fill", TokenType.Fill },
-        { "GoTo", TokenType.GoTo }
+        { "GoTo", TokenType.GoTo },
+        {"SetCursor" , TokenType.SetCursor}
     };
     private static readonly Dictionary<string, TokenType> Functions = new()
     {
@@ -268,7 +269,7 @@ public class Lexer
             //     type = matchedRule.Type;
             // }
             
-            Console.WriteLine($"LEXEME: '{lexeme}' | TYPE: {type} | Position: {_position} | Source at lookahead: '{(_position + lexeme.Length < _source.Length ? _source[_position + lexeme.Length].ToString() : "EOF")}'");
+            // Console.WriteLine($"LEXEME: '{lexeme}' | TYPE: {type} | Position: {_position} | Source at lookahead: '{(_position + lexeme.Length < _source.Length ? _source[_position + lexeme.Length].ToString() : "EOF")}'");
             //Exceptions
             if (type == TokenType.Number && _position+1 < _source.Length && char.IsLetter(_source[_position+1]))
             {

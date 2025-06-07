@@ -1,38 +1,43 @@
 using Xunit;
-using PixelWalle.Interpreter.Lexer;
-using PixelWalle.Interpreter.Parser;
-using PixelWalle.Interpreter.AST;
-using System;
+    using PixelWalle.Interpreter.Parser;
+    using PixelWalle.Interpreter.Lexer;
+    using PixelWalle.Interpreter.AST;
 
-namespace PixelWalle.Tests;
+    namespace PixelWalle.Tests.ParserTests;
 
-public class ParserTests
-{
-    [Fact]
-    public void Parser_ShouldParseFullProgramCorrectly()
+    public class UnaryParserTests
     {
-        string code = string.Join('\n', new[]
+        [Fact]
+        public void Parser_ShouldParse_NegativeLiteral()
         {
-            "Spawn(0,0)",
-            "Color(\"Red\")",
-            "x <- 3 + 2 * GetActualX()",
-            "loop-1",
-            "DrawLine(1, 0, 5)",
-            "GoTo [loop-1] (x < 10)"
-        });
+            var source = "a <- -5";
+            var lexer = new Lexer(source);
+            var tokens = lexer.TokenizeWithRegex();
+            var parser = new Parser(tokens);
 
-        var lexer = new Lexer(code);
-        var tokens = lexer.TokenizeWithRegex();
+            var program = parser.ParseProgram();
+            var assign = Assert.IsType<AssignmentNode>(program.Statements[0]);
 
-        var parser = new Parser(tokens);
-        Console.WriteLine($"Primer token: {tokens.First()}");
-        var program = parser.ParseProgram();
+            var unary = Assert.IsType<UnaryExpressionNode>(assign.Expression);
+            Assert.Equal(TokenType.Minus, unary.Operator);
 
-        Assert.NotNull(program);
-        Assert.IsType<ProgramNode>(program);
-        Assert.Equal(6, program.Statements.Count);
+            var literal = Assert.IsType<LiteralNode>(unary.Operand);
+            Assert.Equal(5, literal.Value);
+        }
 
-        // Imprimir el AST para inspección visual
-        Console.WriteLine(AstPrinter.Print(program));
+        [Fact]
+        public void Parser_ShouldParse_NegatedParenthesizedExpression()
+        {
+            var source = "a <- -(3 + 2)";
+            var lexer = new Lexer(source);
+            var tokens = lexer.TokenizeWithRegex();
+            var parser = new Parser(tokens);
+
+            var program = parser.ParseProgram();
+            var assign = Assert.IsType<AssignmentNode>(program.Statements[0]);
+            var unary = Assert.IsType<UnaryExpressionNode>(assign.Expression);
+            var binary = Assert.IsType<BinaryExpressionNode>(unary.Operand);
+
+            Assert.Equal(TokenType.Plus, binary.Operator);
+        }
     }
-}

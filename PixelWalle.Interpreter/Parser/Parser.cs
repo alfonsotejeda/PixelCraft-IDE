@@ -95,6 +95,7 @@ public class Parser
                 TokenType.GetColorCount or
                 TokenType.IsBrushColor or
                 TokenType.IsBrushSize or
+                TokenType.SetCursor or
                 TokenType.IsCanvasColor => true,
             _ => false,
         };
@@ -160,7 +161,7 @@ public class Parser
     }
     private AstNode ParsePower()
     {
-        var expr = ParsePrimary();
+        var expr = ParseUnary(); // <-- antes era ParsePrimary()
         if (Match(TokenType.Power))
         {
             var op = Previous;
@@ -168,6 +169,17 @@ public class Parser
             return new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
+    }
+    private AstNode ParseUnary()
+    {
+        if (Match(TokenType.Minus, TokenType.Plus))
+        {
+            var op = Previous;
+            var right = ParseUnary(); // Permite -(-a) o +(-3)
+            return new UnaryExpressionNode(op.Type, right, op.Line, op.Column);
+        }
+
+        return ParsePrimary();
     }
     private AstNode ParsePrimary()
     {
@@ -213,7 +225,6 @@ public class Parser
         {
             return new VariableNode(token.Lexeme!, token.Line, token.Column);
         }
-        Console.WriteLine($"[DEBUG] Primary recibió: {Current}");
 
         throw new ParserException($"Expresión inesperada: '{token.Lexeme}'", token.Line, token.Column);
     }
