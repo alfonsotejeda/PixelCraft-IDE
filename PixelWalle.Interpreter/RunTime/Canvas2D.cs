@@ -474,21 +474,4 @@ public class Canvas2D : ICanvas
     }
 }
 
-public byte[] GetRawPixelData()
-{
-    if (_image == null)
-    {
-        // Devuelve un array vacío si la imagen no existe para evitar errores.
-        return new byte[0];
-    }
-
-    // Crea un array de bytes del tamaño exacto necesario: ancho * alto * 4 bytes (R, G, B, A).
-    byte[] pixelData = new byte[_width * _height * 4];
-    
-    // SixLabors.ImageSharp proporciona un método altamente optimizado para copiar los
-    // datos de los píxeles directamente al array de bytes.
-    _image.CopyPixelDataTo(pixelData);
-    
-    return pixelData;
-}
 }
