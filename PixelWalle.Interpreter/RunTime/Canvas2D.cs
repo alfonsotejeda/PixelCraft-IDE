@@ -31,7 +31,8 @@ public class Canvas2D : ICanvas
         { "Red", new Rgba32(255, 0, 0, 255) },
         { "Green", new Rgba32(0, 255, 0, 255) },
         { "Blue", new Rgba32(0, 0, 255, 255) },
-        { "Yellow", new Rgba32(255, 255, 0, 255) }
+        { "Yellow", new Rgba32(255, 255, 0, 255) },
+        { "Transparent" , new Rgba32(0,0,0,0)}
     };
 
     // --- MODIFICADO: Constructor de Canvas2D para crear o cargar una imagen ---
@@ -149,7 +150,11 @@ public class Canvas2D : ICanvas
         int y = _state.CursorY;
         for (int step = 0; step < length; step++)
         {
-            PaintBrush(x, y);
+            
+            if ( _currentBrushName != "Transparent")
+            {
+                PaintBrush(x, y);
+            }
             x += dx;
             y += dy;
         }
@@ -173,7 +178,10 @@ public class Canvas2D : ICanvas
                 {
                     int px = startX + x;
                     int py = startY + y;
-                    PaintBrush(px, py);
+                    if ( _currentBrushName != "Transparent")
+                    {
+                        PaintBrush(px, py);
+                    };
                 }
             }
         }
@@ -198,7 +206,10 @@ public class Canvas2D : ICanvas
                 double dist = Math.Sqrt(x * x + y * y);
                 if (dist >= radius - 0.5 && dist <= radius + 0.5)
                 {
-                    PaintBrush(centerX + x, centerY + y);
+                    if ( _currentBrushName != "Transparent")
+                    {
+                        PaintBrush(centerX + x, centerY + y);
+                    }
                 }
             }
         }

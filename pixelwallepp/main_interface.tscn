@@ -1,0 +1,159 @@
+[gd_scene load_steps=4 format=3 uid="uid://dlere572oap21"]
+
+[ext_resource type="Script" uid="uid://djmd70jxuv44x" path="res://main_interface.gd" id="1_3wdv7"]
+[ext_resource type="Texture2D" uid="uid://pbwlfcr2ewlt" path="res://Captura de pantalla 2025-06-10 a la(s) 4.50.32 p.m..png" id="2_v57av"]
+
+[sub_resource type="CodeHighlighter" id="CodeHighlighter_3wdv7"]
+number_color = Color(0.388235, 0.588235, 0, 1)
+symbol_color = Color(0.25332, 0.473895, 1, 1)
+function_color = Color(3.56168e-06, 0.63781, 0.467077, 1)
+member_variable_color = Color(0, 0, 0.368627, 1)
+
+[node name="MainInterface" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_3wdv7")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ToolBar" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="RunButton" type="Button" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "▶ Ejecutar"
+
+[node name="LoadButton" type="Button" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "📂 Cargar"
+
+[node name="SaveButton" type="Button" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "💾 Guardar
+"
+
+[node name="VSeparator" type="VSeparator" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+
+[node name="WidthInput" type="LineEdit" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "1080"
+placeholder_text = "Ancho"
+alignment = 1
+max_length = 5
+expand_to_text_length = true
+
+[node name="XLabel" type="Label" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "x"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeightInput" type="LineEdit" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "720"
+placeholder_text = "Alto"
+alignment = 1
+max_length = 5
+
+[node name="ResizeButton" type="Button" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "🖼️  Resize"
+
+[node name="ClearButton" type="Button" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "🧹ClearButton"
+
+[node name="ImageProcessLabel" type="Label" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+text = "Procesando imagen..."
+
+[node name="VSeparator2" type="VSeparator" parent="MarginContainer/VBoxContainer/ToolBar"]
+layout_mode = 2
+
+[node name="ImageProcessProgressBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/ToolBar"]
+custom_minimum_size = Vector2(100, 0)
+layout_direction = 2
+layout_mode = 2
+
+[node name="HSplitContainer" type="HSplitContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Editor" type="CodeEdit" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Spawn(1, 1)
+Color(\"Blue\")
+DrawLine(1, 1,5)
+DrawCircle(1,0,6)
+
+DrawCircle(1, 1, 5)"
+scroll_smooth = true
+minimap_draw = true
+minimap_width = 70
+caret_blink_interval = 0.79
+syntax_highlighter = SubResource("CodeHighlighter_3wdv7")
+highlight_all_occurrences = true
+draw_control_chars = true
+draw_tabs = true
+gutters_draw_line_numbers = true
+auto_brace_completion_highlight_matching = true
+
+[node name="Panel" type="Panel" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HSplitContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 3
+stretch_mode = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="MarginContainer/VBoxContainer/HSplitContainer/Panel/TextureRect"]
+texture_filter = 1
+position = Vector2(193, 232)
+scale = Vector2(0.28125, 0.28125)
+texture = ExtResource("2_v57av")
+
+[node name="ErrorPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ErrorLog" type="TextEdit" parent="MarginContainer/VBoxContainer/ErrorPanel"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+editable = false
+
+[node name="ErrorTimer" type="Timer" parent="MarginContainer/VBoxContainer"]
+one_shot = true
+
+[node name="RunTimer" type="Timer" parent="MarginContainer/VBoxContainer"]
+wait_time = 0.162
+
+[node name="LoadFileDialog" type="FileDialog" parent="."]
+title = "Open a File"
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.gw ; PixelWalle Code", "*.png ; PixelWalle Picture", "*.jpg; PixelWalle Picture", " *.jpe;PixelWalle Picture", "* .bmp;PixelWalle Picture")
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+title = "Guardar archivo PixelWalle"
