@@ -1,2 +1,0 @@
-Poner errores más detallados
-Aun sin goto
