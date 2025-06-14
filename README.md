@@ -105,14 +105,11 @@ El lenguaje `.gw` está diseñado para ser simple y enfocado en el dibujo. Algun
 
 El modo `--check` del CLI permite un análisis de errores sin ejecutar el dibujo, usado por el frontend para validación en tiempo real mientras se escribe.
 
-## Posibles Mejoras Futuras
-
-(Basado en `FutureCorrections.txt` y observaciones generales)
+## Posibles Mejoras Futuras\
 
 *   Errores más detallados y descriptivos.
 *   Mejoras en el rendimiento para lienzos grandes o scripts complejos.
 *   Paleta de colores en la UI.
 *   Herramientas de debugging más avanzadas en el frontend.
 
----
 
