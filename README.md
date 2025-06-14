@@ -55,48 +55,6 @@ El proyecto se divide en tres componentes principales:
 *   **Frontend:** Godot Engine (v4.x) con GDScript
 *   **Formato de Intercambio de Datos:** JSON
 
-## Estructura de Carpetas del Repositorio
-/PixelWalle.Interpreter/
-├── .gitignore
-├── .idea/                            # Archivos de configuración del IDE (JetBrains)
-│   └── .idea.PixelWalle.Interpreter/
-├── PixelWalle.CLI/                   # Proyecto de la aplicación de línea de comandos
-│   ├── .idea/                        # Archivos de configuración del IDE para el CLI
-│   ├── PixelWalle.CLI.csproj
-│   ├── Program.cs                    # Punto de entrada del CLI
-│   └── code.gw                       # Archivo de ejemplo o temporal para pruebas
-├── PixelWalle.Interpreter.sln        # Archivo de solución de Visual Studio
-├── PixelWalle.Interpreter/           # Proyecto de la biblioteca del intérprete
-│   ├── AST/
-│   ├── Errors/
-│   ├── FutureCorrections.txt         # Notas sobre futuras mejoras
-│   ├── Lexer/
-│   ├── Parser/
-│   ├── PixelWalle.Interpreter.csproj
-│   ├── RunTime/
-│   └── Semantic/
-├── PixelWalle.Tests/                 # Proyecto de pruebas unitarias
-│   ├── ExecutionStateTests.cs
-│   ├── InterpreterTest.cs
-│   ├── ParserTests.cs
-│   ├── RunTimeTest/                  # Pruebas específicas del Runtime
-│   └── SemanticTest.cs
-├── README.md                         # Este archivo
-└── pixelwallepp/                     # Proyecto de Godot (Frontend)
-├── .editorconfig
-├── .gitattributes
-├── .gitignore
-├── Captura de pantalla ...png      # Imágenes (ej. capturas de pantalla)
-├── Captura de pantalla ...png.import # Metadatos de importación de Godot
-├── icon.svg
-├── icon.svg.import
-├── main_interface.gd             # Lógica principal de la UI
-├── main_interface.gd.uid         # Identificador único de recurso de Godot
-├── main_interface.tscn           # Escena principal de la UI de Godot
-├── pictures_to_pixel_art/        # Posiblemente recursos o scripts adicionales
-└── project.godot                 # Archivo de configuración del proyecto Godot
-
-
 ## Lenguaje PixelWalle (`.gw`)
 
 El lenguaje `.gw` está diseñado para ser simple y enfocado en el dibujo. Algunos comandos y características clave incluyen:
