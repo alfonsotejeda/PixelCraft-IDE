@@ -21,8 +21,7 @@ extends Control
 @onready var image_process_label = $MarginContainer/VBoxContainer/ToolBar/ImageProcessLabel
 
 @onready var cursor_sprite = $MarginContainer/VBoxContainer/HSplitContainer/Panel/TextureRect/Sprite2D
-
-const CLI_PATH := "/Users/alfonso/Documents/Pro_Project/PixelWalle/PixelWalle.Interpreter/PixelWalle.CLI/bin/Debug/net9.0/publish_osx-arm64/PixelWalle.CLI"
+var CLI_PATH: String 
 
 const PIXEL_ART_CELL_SIZE := 4
 
@@ -31,6 +30,23 @@ var _current_cursor_x: int = 0
 var _current_cursor_y: int = 0
 
 func _ready():
+		# --- CAMBIO AQUÍ: ASIGNACIÓN DE CLI_PATH EN _ready() ---
+	# La ruta base al directorio 'publish' dentro de tu carpeta 'PixelWalle.CLI'
+	# Si la ruta que obtuviste de VS Code es 'res://PixelWalle.CLI/bin/Debug/net9.0/publish_osx-arm64/PixelWalle.CLI'
+	# entonces la parte 'res://PixelWalle.CLI/bin/Debug/net9.0/publish_osx-arm64/' es la carpeta base.
+	var base_cli_dir = "res://PixelWalle.CLI/bin/Debug/net9.0/publish_osx-arm64/" #
+	
+	var cli_name = ""
+	if OS.has_feature("windows"): #
+		cli_name = "PixelWalle.CLI.exe" # Nombre del ejecutable en Windows
+	elif OS.has_feature("macos") or OS.has_feature("x11"): # x11 es para Linux
+		cli_name = "PixelWalle.CLI" # Nombre del ejecutable en macOS/Linux (sin extensión)
+
+	# Combina la base con el nombre específico del ejecutable y globaliza la ruta
+	CLI_PATH = ProjectSettings.globalize_path(base_cli_dir + cli_name) #
+
+	# Añade un print para depuración para verificar la ruta final resuelta
+	print("[DEBUG] CLI Path resuelto: {cli_path_value}".format({"cli_path_value": CLI_PATH})) #
 	error_timer.timeout.connect(_check_for_errors)
 	editor.text_changed.connect(_on_code_changed)
 	run_button.pressed.connect(_run_backend)

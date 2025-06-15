@@ -113,3 +113,22 @@ El modo `--check` del CLI permite un análisis de errores sin ejecutar el dibujo
 *   Herramientas de debugging más avanzadas en el frontend.
 
 
+
+## Demo y Más Información
+
+Para más detalles sobre el proyecto, su arquitectura y componentes, puedes visitar la siguiente página:
+
+*   [PixelCraft-IDE Wiki](https://deepwiki.com/alfonso/tejeda/PixelCraft-IDE)
+
+A continuación, algunas capturas de pantalla de la aplicación en funcionamiento:
+
+**Ejemplo : Dibujo de Wall-E y Eve**
+
+
+
+![Image](pixelwallepp/pictures_to_pixel_art/walle.png)
+
+
+
+---
+
