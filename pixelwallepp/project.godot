@@ -12,7 +12,7 @@ config_version=5
 
 config/name="PixelWallePP"
 run/main_scene="uid://dlere572oap21"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [display]
@@ -29,4 +29,5 @@ project/assembly_name="PixelWallePP"
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+textures/vram_compression/import_etc2_astc=true
 viewport/hdr_2d=true
