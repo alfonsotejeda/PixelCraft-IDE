@@ -242,9 +242,9 @@ public class Lexer
             string remaining = _source[_position..];
             LexRule? matchedRule = null;
             Match? match = null;
-            foreach (var rule in LexRules)
+            foreach (LexRule rule in LexRules)
             {
-                var m = rule.Pattern.Match(remaining);
+                Match m = rule.Pattern.Match(remaining);
                 if (m.Success && m.Index == 0)
                 {
                     if (match == null || m.Length > match.Length)
@@ -294,7 +294,7 @@ public class Lexer
             if (type == TokenType.Identifier && lookahead < _source.Length && _source[lookahead] == '(')
             {
                 Console.WriteLine($"👉 FUNCION sospechosa: '{lexeme}' en columna {column} línea {line}");
-                var sugerencia = SugerenciaCercana(lexeme);
+                string sugerencia = SugerenciaCercana(lexeme);
                 if (sugerencia != null)
                 {
                     throw new LexerException($"Se esperaba una palabra clave o función, pero se encontró '{lexeme}'. ¿Quizás quisiste escribir '{sugerencia}'?", line, column);
@@ -327,10 +327,6 @@ public class Lexer
         tokens.Add(new Token("", TokenType.EndOfFile, line, column));
         return tokens;
     }
-
-    
-    
-    
 
     private void Advance()
     {
@@ -371,7 +367,7 @@ public class Lexer
     private Token ReadNumber()
     {
         int startColumn = _column;
-        var number = new StringBuilder();
+        StringBuilder number = new StringBuilder();
 
         while (char.IsDigit(_currentChar))
         {
@@ -384,7 +380,7 @@ public class Lexer
     private Token ReadWord()
     {
         int startColumn = _column;
-        var text = new StringBuilder();
+        StringBuilder text = new StringBuilder();
         while (char.IsLetter(_currentChar) || char.IsDigit(_currentChar) || _currentChar == '_' || _currentChar == '-')
         {
             text.Append(_currentChar);
@@ -392,7 +388,7 @@ public class Lexer
         }
         string wordStr = text.ToString();
 
-        if (Instructions.TryGetValue(wordStr, out var tokenType) || Functions.TryGetValue(wordStr, out tokenType) || Literals.TryGetValue(wordStr, out tokenType))
+        if (Instructions.TryGetValue(wordStr, out TokenType tokenType) || Functions.TryGetValue(wordStr, out tokenType) || Literals.TryGetValue(wordStr, out tokenType))
         {
             return new Token(wordStr, tokenType, _line, startColumn);
             
@@ -424,17 +420,13 @@ public class Lexer
                 throw new LexerException($"Palabra clave no reconocida: '{wordStr}'", _line, startColumn);
             }
         }
-        // else if (_currentChar == '\n')
-        // {
-        //     return new Token(wordStr, TokenType.Etiquette, _line, startColumn);
-        // }
         return new Token(wordStr, TokenType.Identifier, _line, startColumn);
     }
     private static TokenType ResolveKeywordOrIdentifier(string lexeme)
     {
-        if (Instructions.TryGetValue(lexeme, out var instr)) return instr;
-        if (Functions.TryGetValue(lexeme, out var func)) return func;
-        if (Literals.TryGetValue(lexeme, out var lit)) return lit;
+        if (Instructions.TryGetValue(lexeme, out TokenType instr)) return instr;
+        if (Functions.TryGetValue(lexeme, out TokenType func)) return func;
+        if (Literals.TryGetValue(lexeme, out TokenType lit)) return lit;
         return TokenType.Identifier;
     }
     private int Levenshtein(string s, string t)
@@ -469,7 +461,7 @@ public class Lexer
         string? sugerencia = null;
         int mejorDistancia = int.MaxValue;
 
-        foreach (var palabra in Instructions.Keys.Concat(Functions.Keys).Concat(Literals.Keys))
+        foreach (string palabra in Instructions.Keys.Concat(Functions.Keys).Concat(Literals.Keys))
         {
             int dist = Levenshtein(input, palabra);
             if (dist < mejorDistancia && dist <= umbral)
@@ -480,8 +472,6 @@ public class Lexer
         }
 
         return sugerencia;
-    }
-   
-    
+    }    
 }
 

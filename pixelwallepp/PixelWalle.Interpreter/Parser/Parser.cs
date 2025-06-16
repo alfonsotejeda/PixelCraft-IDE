@@ -20,7 +20,7 @@ public class Parser
         while (Check(TokenType.NewLine))
             Advance();
         
-        var statements = new List<AstNode>();
+        List<AstNode> statements = new List<AstNode>();
         while (!IsAtEnd())
         {
             while (Check(TokenType.NewLine))
@@ -66,10 +66,10 @@ public class Parser
     }
     private AssignmentNode ParseAssignment()
     {
-        var nameToken = Consume(TokenType.Identifier, "Se esperaba un nombre de variable");
-        var assignToken = Consume(TokenType.Assign, "Se esperaba el operador '<-' para asignación");
+        Token nameToken = Consume(TokenType.Identifier, "Se esperaba un nombre de variable");
+        Token assignToken = Consume(TokenType.Assign, "Se esperaba el operador '<-' para asignación");
 
-        var expr = ParseExpression();
+        AstNode expr = ParseExpression();
 
         return new AssignmentNode(nameToken.Lexeme!, expr, nameToken.Line, nameToken.Column);
     }
@@ -106,66 +106,66 @@ public class Parser
     }
     private AstNode ParseOr()
     {
-        var expr = ParseAnd();
+        AstNode expr = ParseAnd();
         while (Match(TokenType.Or))
         {
-            var op = Previous;
-            var right = ParseAnd();
+            Token op = Previous;
+            AstNode right = ParseAnd();
             expr = new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
     }
     private AstNode ParseAnd()
     {
-        var expr = ParseComparison();
+        AstNode expr = ParseComparison();
         while (Match(TokenType.And))
         {
-            var op = Previous;
-            var right = ParseComparison();
+            Token op = Previous;
+            AstNode right = ParseComparison();
             expr = new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
     }
     private AstNode ParseComparison()
     {
-        var expr = ParseTerm();
+        AstNode expr = ParseTerm();
         while (Match(TokenType.Equal, TokenType.Greater, TokenType.GreaterEqual, TokenType.Less, TokenType.LessEqual))
         {
-            var op = Previous;
-            var right = ParseTerm();
+            Token op = Previous;
+            AstNode right = ParseTerm();
             expr = new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
     }
     private AstNode ParseTerm()
     {
-        var expr = ParseFactor();
+        AstNode expr = ParseFactor();
         while (Match(TokenType.Plus, TokenType.Minus))
         {
-            var op = Previous;
-            var right = ParseFactor();
+            Token op = Previous;
+            AstNode right = ParseFactor();
             expr = new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
     }
     private AstNode ParseFactor()
     {
-        var expr = ParsePower();
+        AstNode expr = ParsePower();
         while (Match(TokenType.Times, TokenType.Divide, TokenType.Modulo))
         {
-            var op = Previous;
-            var right = ParsePower();
+            Token op = Previous;
+            AstNode right = ParsePower();
             expr = new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
     }
     private AstNode ParsePower()
     {
-        var expr = ParseUnary(); // <-- antes era ParsePrimary()
+        AstNode expr = ParseUnary();
         if (Match(TokenType.Power))
         {
-            var op = Previous;
-            var right = ParsePower(); // Recursión derecha
+            Token op = Previous;
+            AstNode right = ParsePower(); // Recursión derecha
             return new BinaryExpressionNode(expr, op.Type, right, op.Line, op.Column);
         }
         return expr;
@@ -174,8 +174,8 @@ public class Parser
     {
         if (Match(TokenType.Minus, TokenType.Plus))
         {
-            var op = Previous;
-            var right = ParseUnary(); // Permite -(-a) o +(-3)
+            Token op = Previous;
+            AstNode right = ParseUnary();
             return new UnaryExpressionNode(op.Type, right, op.Line, op.Column);
         }
 
@@ -183,12 +183,12 @@ public class Parser
     }
     private AstNode ParsePrimary()
     {
-        var token = Current;
+        Token token = Current;
 
         // Paréntesis
         if (Match(TokenType.LeftParenthesis))
         {
-            var expr = ParseExpression();
+            AstNode expr = ParseExpression();
             Consume(TokenType.RightParenthesis, "Se esperaba ')' para cerrar la expresión");
             return expr;
         }
@@ -203,7 +203,7 @@ public class Parser
         // Números
         if (Match(TokenType.Number))
         {
-            if (!int.TryParse(token.Lexeme, out var value))
+            if (!int.TryParse(token.Lexeme, out int value))
                 throw new ParserException($"Número inválido: {token.Lexeme}", token.Line, token.Column);
 
             return new LiteralNode(value, token.Line, token.Column);
@@ -218,7 +218,7 @@ public class Parser
         // Funciones o variables
         if (IsFunctionName(Current.Type))
         {
-            var funcToken = Advance();
+            Token funcToken = Advance();
             return ParseFunctionCallFromIdentifier(funcToken);
         }
         else if (Match(TokenType.Identifier))
@@ -232,7 +232,7 @@ public class Parser
     {
         Consume(TokenType.LeftParenthesis, "Se esperaba '(' en la llamada a función");
 
-        var args = new List<AstNode>();
+        List<AstNode> args = new List<AstNode>();
         if (!Check(TokenType.RightParenthesis))
         {
             do
@@ -248,7 +248,7 @@ public class Parser
     }
     private LabelNode ParseLabel()
     {
-        var labelToken = Consume(TokenType.Identifier, "Se esperaba un nombre de etiqueta");
+        Token labelToken = Consume(TokenType.Identifier, "Se esperaba un nombre de etiqueta");
 
         // Validación opcional: evitar nombres inválidos
         if (labelToken.Lexeme!.Any(char.IsWhiteSpace))
@@ -258,14 +258,14 @@ public class Parser
     }
     private GotoNode ParseGoto()
     {
-        var gotoToken = Consume(TokenType.GoTo, "Se esperaba 'GoTo'");
+        Token gotoToken = Consume(TokenType.GoTo, "Se esperaba 'GoTo'");
         Consume(TokenType.LeftBracket, "Se esperaba '[' después de 'GoTo'");
 
-        var labelToken = Consume(TokenType.Identifier, "Se esperaba el nombre de la etiqueta destino");
+        Token labelToken = Consume(TokenType.Identifier, "Se esperaba el nombre de la etiqueta destino");
         Consume(TokenType.RightBracket, "Se esperaba ']' después del nombre de la etiqueta");
 
         Consume(TokenType.LeftParenthesis, "Se esperaba '(' antes de la condición");
-        var condition = ParseExpression();
+        AstNode condition = ParseExpression();
         Consume(TokenType.RightParenthesis, "Se esperaba ')' al final de la condición");
 
         return new GotoNode(labelToken.Lexeme!, condition, gotoToken.Line, gotoToken.Column);
@@ -273,12 +273,12 @@ public class Parser
     private SpawnNode ParseSpawn() 
     {
         // Se espera: Spawn ( <number> , <number> )
-        var spawnToken = Consume(TokenType.Spawn, "Se esperaba la palabra clave 'Spawn'");
+        Token spawnToken = Consume(TokenType.Spawn, "Se esperaba la palabra clave 'Spawn'");
         Consume(TokenType.LeftParenthesis, "Se esperaba '(' después de 'Spawn'");
 
-        var xToken = Consume(TokenType.Number, "Se esperaba un número entero para la coordenada X");
+        Token xToken = Consume(TokenType.Number, "Se esperaba un número entero para la coordenada X");
         Consume(TokenType.Comma, "Se esperaba ',' entre las coordenadas");
-        var yToken = Consume(TokenType.Number, "Se esperaba un número entero para la coordenada Y");
+        Token yToken = Consume(TokenType.Number, "Se esperaba un número entero para la coordenada Y");
         Consume(TokenType.RightParenthesis, "Se esperaba ')' después de las coordenadas");
 
         // Convertimos los lexemas en enteros reales
@@ -291,12 +291,12 @@ public class Parser
     }
     private FunctionCallNode ParseFunctionCall()
     {
-        var funcToken = Advance(); // Consumo el nombre de la función
+        Token funcToken = Advance(); // Consumo el nombre de la función
 
-        var name = funcToken.Lexeme!;
+        string name = funcToken.Lexeme!;
         Consume(TokenType.LeftParenthesis, "Se esperaba '(' después de la función");
 
-        var arguments = new List<AstNode>();
+        List<AstNode> arguments = new List<AstNode>();
 
         if (!Check(TokenType.RightParenthesis))
         {
@@ -327,7 +327,7 @@ public class Parser
     }
     private bool Match(params TokenType[] types)
     {
-        foreach (var type in types)
+        foreach (TokenType type in types)
         {
             if (Check(type))
             {

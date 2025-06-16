@@ -28,9 +28,9 @@ static class Program
         string codeFilePath = string.Empty; // Inicializar a string.Empty
         bool checkOnly = false;
         bool clearCanvas = false;
-        string? inputImageBase64 = null; // Hazlo anulable
-        int cursorX = 0; // Podrías quitar esto si el estado del cursor se maneja internamente.
-        int cursorY = 0; // Podrías quitar esto si el estado del cursor se maneja internamente.
+        string? inputImageBase64 = null;
+        int cursorX = 0;
+        int cursorY = 0;
         string? base64Image = null; // Hazlo anulable
         int startLine = 1; // Por defecto, empieza en la línea 1 (1-basada)
         int linesToProcess = -1; // -1 significa "procesar hasta el final"
@@ -136,15 +136,15 @@ static class Program
             // Modo de verificación (checkOnly)
             if (checkOnly)
             {
-                var tokens = new Lexer(sourceCode).TokenizeWithRegex();
-                var program = new Parser(tokens).ParseProgram();
-                var semantic = new SemanticAnalyzer();
+                List<Token> tokens = new Lexer(sourceCode).TokenizeWithRegex();
+                ProgramNode program = new Parser(tokens).ParseProgram();
+                SemanticAnalyzer semantic = new SemanticAnalyzer();
                 semantic.Analyze(program);
-                var semanticErrors = semantic.GetErrors();
+                List<SemanticException> semanticErrors = semantic.GetErrors();
 
                 if (semanticErrors.Any())
                 {
-                    var errorJson = JsonSerializer.Serialize(new {
+                    string errorJson = JsonSerializer.Serialize(new {
                         errors = semanticErrors.Select(ex => new {
                             line = ex.Line,
                             column = ex.Column,
@@ -210,7 +210,7 @@ static class Program
             // Si solo se solicitó limpiar y no hay código para ejecutar
             if (clearCanvas && string.IsNullOrEmpty(codeFilePath))
             {
-                var cleanedImageBytes = _currentCanvas.SaveAsPngBytes();
+                byte[] cleanedImageBytes = _currentCanvas.SaveAsPngBytes();
                 base64Image = Convert.ToBase64String(cleanedImageBytes);
                 Console.WriteLine(JsonSerializer.Serialize(new { image = base64Image, cursorX = _currentExecutionState.CursorX, cursorY = _currentExecutionState.CursorY, lastProcessedLine = 0 }));
                 return;
@@ -219,11 +219,11 @@ static class Program
             // Si hay código para ejecutar, ejecutarlo
             if (!string.IsNullOrEmpty(sourceCode))
             {
-                var tokens = new Lexer(sourceCode).TokenizeWithRegex();
-                var program = new Parser(tokens).ParseProgram(); // Parsear el programa completo una vez
+                List<Token> tokens = new Lexer(sourceCode).TokenizeWithRegex();
+                ProgramNode program = new Parser(tokens).ParseProgram(); // Parsear el programa completo una vez
 
                 // Crear el intérprete con los parámetros de rango de ejecución
-                var interpreter = new Interpreter(_currentExecutionState, _currentCanvas, startLine, linesToProcess);
+                Interpreter interpreter = new Interpreter(_currentExecutionState, _currentCanvas, startLine, linesToProcess);
                 interpreter.Execute(program); // Ejecutar el programa (parcialmente si se especificó)
                 
                 // Obtener la última línea procesada del intérprete
@@ -242,7 +242,7 @@ static class Program
         }
         catch (InterpreterException ex)
         {
-            var errorJson = JsonSerializer.Serialize(new {
+            string errorJson = JsonSerializer.Serialize(new {
                 errors = new[] {
                     new {
                         line = ex.Line,
@@ -255,7 +255,7 @@ static class Program
         }
         catch (Exception ex)
         {
-            var errorJson = JsonSerializer.Serialize(new {
+            string errorJson = JsonSerializer.Serialize(new {
                 errors = new[] {
                     new {
                         line = 0,

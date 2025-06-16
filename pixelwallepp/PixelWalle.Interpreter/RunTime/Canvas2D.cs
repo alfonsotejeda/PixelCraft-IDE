@@ -6,13 +6,13 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats; 
 using SixLabors.ImageSharp.Processing;   
 using PixelWalle.Interpreter.Errors;
-using PixelWalle.Interpreter.RunTime; 
+using PixelWalle.Interpreter.Runtime; 
 
 namespace PixelWalle.Interpreter.Runtime;
 
 public class Canvas2D : ICanvas
 {
-	// --- ELIMINADO: private readonly string[,] _grid; // Ya no necesitamos la grilla de strings
+
 	private Image<Rgba32> _image; // El lienzo real de SixLabors.ImageSharp
 	private readonly int _width;
 	private readonly int _height;
@@ -35,7 +35,7 @@ public class Canvas2D : ICanvas
 		{ "Transparent" , new Rgba32(0,0,0,0)}
 	};
 
-	// --- MODIFICADO: Constructor de Canvas2D para crear o cargar una imagen ---
+
 	public Canvas2D(int width, int height, ExecutionState state, byte[] initialImageBytes = null)
 	{
 		if (width <= 0 || height <= 0)
@@ -51,17 +51,15 @@ public class Canvas2D : ICanvas
 			{
 				// Cargar la imagen desde los bytes (Godot la enviaría)
 				_image = Image.Load<Rgba32>(initialImageBytes);
-				// Asegúrate de que las dimensiones coincidan o maneja el reescalado/recorte si es necesario
 				if (_image.Width != _width || _image.Height != _height)
 				{
-					// Puedes reescalar la imagen si las dimensiones no coinciden.
 					// Esto es importante si el usuario cambia el tamaño del canvas en Godot.
 					_image.Mutate(x => x.Resize(new Size(_width, _height)));
 				}
 			}
 			catch (Exception ex)
 			{
-				// Manejar error de carga de imagen, quizás creando una nueva vacía
+				// Manejar error de carga de imagen, creando una nueva vacía
 				Console.Error.WriteLine($"Advertencia: No se pudo cargar la imagen inicial. Creando un lienzo vacío: {ex.Message}");
 				_image = new Image<Rgba32>(_width, _height);
 				_image.Mutate(x => x.BackgroundColor(SixLabors.ImageSharp.Color.White)); // Inicializa con fondo transparente
@@ -77,7 +75,7 @@ public class Canvas2D : ICanvas
 		SetBrushColor("Black"); 
 	}
 
-	// --- NUEVO MÉTODO: Limpia el canvas a transparente ---
+
 	public void Clear()
 	{
 		_image.Mutate(x => x.BackgroundColor(SixLabors.ImageSharp.Color.White));
@@ -219,17 +217,17 @@ public class Canvas2D : ICanvas
 
 	public void Fill()
 	{
-		// --- MODIFICADO: Ahora utiliza _image.GetPixel y SetPixel ---
-		var startColor = GetPixelColor(_state.CursorX, _state.CursorY); 
+
+		Rgba32 startColor = GetPixelColor(_state.CursorX, _state.CursorY);
 		if (startColor == _currentBrushRgba) return; // Compara con el valor RGBA real del pincel
 
-		var visited = new bool[_height, _width];
-		var queue = new Queue<(int x, int y)>();
+		bool[,] visited = new bool[_height, _width];
+		Queue<(int x, int y)> queue = new Queue<(int x, int y)>();
 		queue.Enqueue((_state.CursorX, _state.CursorY));
 
 		while (queue.Count > 0)
 		{
-			var (x, y) = queue.Dequeue();
+			(int x, int y) = queue.Dequeue();
 
 			if (x < 0 || x >= _width || y < 0 || y >= _height) continue;
 			if (visited[y, x]) continue;
@@ -251,7 +249,6 @@ public class Canvas2D : ICanvas
 	{
 		color = color.Trim('"');
 		// Usamos SetBrushColor temporalmente para obtener el RGBA del color de comparación
-		// Esto es un poco ineficiente, si esto se usa mucho, considera un caché o una función helper.
 		Rgba32 compareRgba;
 		if (color.StartsWith("#"))
 		{
@@ -354,9 +351,15 @@ public class Canvas2D : ICanvas
 		int maxY = Math.Max(y1, y2);
 
 		for (int y = minY; y <= maxY; y++)
-		for (int x = minX; x <= maxX; x++)
-			if (GetPixelColor(x,y).Equals(compareRgba))
-				count++;
+		{
+			for (int x = minX; x <= maxX; x++)
+			{
+				if (GetPixelColor(x,y).Equals(compareRgba))
+				{
+					count++;
+				}
+			}
+		}
 
 		return count;
 	}
@@ -364,7 +367,6 @@ public class Canvas2D : ICanvas
 	private bool IsInsideCanvas(int x, int y)
 		=> x >= 0 && x < _width && y >= 0 && y < _height;
 
-	// --- MODIFICADO: Pinta directamente en _image ---
 	private void Paint(int x, int y)
 	{
 		if (IsInsideCanvas(x, y))
@@ -385,7 +387,7 @@ public class Canvas2D : ICanvas
 		}
 	}
 	
-	// --- NUEVO: Obtiene el color RGBA de un píxel ---
+
 	public Rgba32 GetPixelColor(int x, int y)
 	{
 		if (x < 0 || x >= _width || y < 0 || y >= _height)
@@ -394,7 +396,7 @@ public class Canvas2D : ICanvas
 		return _image[x, y];
 	}
 
-	// --- NUEVO: Establece el color RGBA de un píxel ---
+
 	public void SetPixelColor(int x, int y, Rgba32 color)
 	{
 		if (x < 0 || x >= _width || y < 0 || y >= _height)
@@ -402,8 +404,7 @@ public class Canvas2D : ICanvas
 		_image[x, y] = color;
 	}
 
-	// --- GetColorAt DEPRECADO (o modificar para devolver string hex) ---
-	// Si necesitas GetColorAt para las pruebas o el debugger, puedes devolver el hex:
+	
 	public string GetColorAt(int x, int y)
 	{
 		Rgba32 pixelColor = GetPixelColor(x,y);
@@ -411,7 +412,6 @@ public class Canvas2D : ICanvas
 		return $"#{pixelColor.R:X2}{pixelColor.G:X2}{pixelColor.B:X2}{pixelColor.A:X2}";
 	}
 
-	// --- DebugColorAt MODIFICADO ---
 	public string DebugColorAt(int x, int y) 
 	{
 		Rgba32 pixelColor = GetPixelColor(x,y);
@@ -427,7 +427,7 @@ public class Canvas2D : ICanvas
 
 	public string DebugView()
 	{
-		var builder = new System.Text.StringBuilder();
+		StringBuilder builder = new StringBuilder();
 		for (int y = 0; y < _height; y++)
 		{
 			for (int x = 0; x < _width; x++)
@@ -439,7 +439,6 @@ public class Canvas2D : ICanvas
 		return builder.ToString();
 	}
 
-	// --- MODIFICADO: Ahora devuelve los bytes PNG directamente en lugar de guardar a archivo ---
 	public byte[] SaveAsPngBytes()
 	{
 		using (MemoryStream ms = new MemoryStream())
@@ -449,40 +448,38 @@ public class Canvas2D : ICanvas
 		}
 	}
 
-	// --- MANTENIDO: SetCursor, ya estaba bien ---
+
 	public void SetCursor(int x, int y)
 	{
 		_state.CursorX = x;
 		_state.CursorY = y;
 	}
 	public void LoadFromPngBytes(byte[] pngBytes)
-{
-	if (pngBytes == null || pngBytes.Length == 0)
 	{
-		// Opcional: Podrías limpiar el canvas si los bytes son nulos o vacíos.
-		// Por ahora, solo lanzamos una excepción o no hacemos nada.
-		throw new ArgumentException("Los bytes PNG no pueden ser nulos o vacíos.", nameof(pngBytes));
-	}
-
-	try
-	{
-		using (MemoryStream ms = new MemoryStream(pngBytes))
+		if (pngBytes == null || pngBytes.Length == 0)
 		{
-			// SixLabors.ImageSharp.Image.Load<Rgba32> carga la imagen.
-			// Es importante que la imagen se adapte a las dimensiones actuales del canvas.
-			var loadedImage = SixLabors.ImageSharp.Image.Load<Rgba32>(ms);
-			if (loadedImage.Width != _width || loadedImage.Height != _height)
+			throw new ArgumentException("Los bytes PNG no pueden ser nulos o vacíos.", nameof(pngBytes));
+		}
+
+		try
+		{
+			using (MemoryStream ms = new MemoryStream(pngBytes))
 			{
-				loadedImage.Mutate(x => x.Resize(new Size(_width, _height)));
+				// SixLabors.ImageSharp.Image.Load<Rgba32> carga la imagen.
+				// Es importante que la imagen se adapte a las dimensiones actuales del canvas.
+				Image<Rgba32> loadedImage = Image.Load<Rgba32>(ms);
+				if (loadedImage.Width != _width || loadedImage.Height != _height)
+				{
+					loadedImage.Mutate(x => x.Resize(new Size(_width, _height)));
+				}
+				_image = loadedImage; // Asigna la imagen cargada/redimensionada al canvas interno
 			}
-			_image = loadedImage; // Asigna la imagen cargada/redimensionada al canvas interno
+		}
+		catch (Exception ex)
+		{
+			// Manejar errores de carga, quizás limpiando el canvas o re-lanzando.
+			throw new InterpreterException($"Error al cargar la imagen PNG desde bytes: {ex.Message}", 0, 0);
 		}
 	}
-	catch (Exception ex)
-	{
-		// Manejar errores de carga, quizás limpiando el canvas o re-lanzando.
-		throw new InterpreterException($"Error al cargar la imagen PNG desde bytes: {ex.Message}", 0, 0);
-	}
-}
 
 }

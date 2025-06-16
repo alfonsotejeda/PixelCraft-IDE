@@ -6,14 +6,14 @@ public static class AstPrinter
 {
     public static string Print(AstNode node, int indent = 0)
     {
-        var sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         string pad = new string(' ', indent * 2);
 
         switch (node)
         {
             case ProgramNode program:
                 sb.AppendLine($"{pad}Program:");
-                foreach (var stmt in program.Statements)
+                foreach (AstNode stmt in program.Statements)
                     sb.Append(Print(stmt, indent + 1));
                 break;
 
@@ -28,7 +28,7 @@ public static class AstPrinter
 
             case FunctionCallNode call:
                 sb.AppendLine($"{pad}Call {call.Name}(");
-                foreach (var arg in call.Arguments)
+                foreach (AstNode arg in call.Arguments)
                     sb.Append(Print(arg, indent + 1));
                 sb.AppendLine($"{pad})");
                 break;

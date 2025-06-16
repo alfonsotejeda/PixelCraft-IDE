@@ -2,8 +2,8 @@ using PixelWalle.Interpreter.AST;
 using PixelWalle.Interpreter.Errors;
 using PixelWalle.Interpreter.Lexer;
 using PixelWalle.Interpreter.Parser;
-using System.Collections.Generic; // Necesario para List
-using System.Linq; // Necesario para Any()
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PixelWalle.Interpreter.Semantic;
 
@@ -14,7 +14,7 @@ public class SemanticAnalyzer
     private bool spawnFound = false;
     private bool spawnInFirstPosition = false;
     
-    // --- NUEVO: Lista para recolectar errores ---
+
     private readonly List<SemanticException> _errors = new();
 
     private static readonly Dictionary<string, FunctionSignature> FunctionSignatures = new()
@@ -33,20 +33,19 @@ public class SemanticAnalyzer
         ["GetColorCount"] = new FunctionSignature("GetColorCount",Type.String, Type.Int, Type.Int, Type.Int, Type.Int),
         ["IsBrushColor"] = new FunctionSignature("IsBrushColor", Type.String),
         ["IsBrushSize"] = new FunctionSignature("IsBrushSize", Type.Int),
-        // ["IsCanvasColor"] = new FunctionSignature("IsCanvasColor", Type.String , Type.Int , Type.Int), // Esta firma parece incorrecta, `IsCanvasColor` en Canvas2D solo toma string
-        ["IsCanvasColor"] = new FunctionSignature("IsCanvasColor", Type.String), // Firma corregida si tu `IsCanvasColor` solo toma un string
+        ["IsCanvasColor"] = new FunctionSignature("IsCanvasColor", Type.String),
     };
 
     public void Analyze(ProgramNode program)
     {
-        // NO lanzar excepción aquí; en su lugar, añadir al _errors
+
         if (program.Statements.Count == 0)
         {
             _errors.Add(new SemanticException("El programa está vacío", 0, 0));
             return; // No hay más que analizar si el programa está vacío
         }
 
-        foreach (var stmt in program.Statements)
+        foreach (AstNode stmt in program.Statements)
         {
             if (stmt is LabelNode label)
             {
@@ -60,7 +59,7 @@ public class SemanticAnalyzer
         
         for (int i = 0; i < program.Statements.Count; i++)
         {
-            var stmt = program.Statements[i];
+            AstNode stmt = program.Statements[i];
 
             if (stmt is SpawnNode spawn)
             {
@@ -75,10 +74,7 @@ public class SemanticAnalyzer
                 spawnFound = true;
             }
 
-            // Solo analiza si no hay errores terminales detectados,
-            // o si quieres seguir recolectando más errores.
-            // Para análisis semántico, generalmente es mejor seguir
-            // para encontrar tantos errores como sea posible.
+            
             try
             {
                 AnalyzeNode(stmt);
@@ -141,7 +137,7 @@ public class SemanticAnalyzer
                 break;
             
             case FunctionCallNode f:
-                if (!FunctionSignatures.TryGetValue(f.Name, out var sig))
+                if (!FunctionSignatures.TryGetValue(f.Name, out FunctionSignature sig))
                 {
                     _errors.Add(new SemanticException($"Función '{f.Name}' no reconocida", f.Line, f.Column));
                     return; // No podemos seguir validando argumentos si la función no se reconoce
@@ -161,8 +157,8 @@ public class SemanticAnalyzer
                     // Sin embargo, si InferType lanza, el try-catch de Analyze(ProgramNode) lo capturará.
                     try
                     {
-                        var argType = InferType(f.Arguments[i]);
-                        var expectedType = sig.ParameterTypes[i];
+                        Type argType = InferType(f.Arguments[i]);
+                        Type expectedType = sig.ParameterTypes[i];
 
                         if (argType != expectedType)
                         {
@@ -183,11 +179,7 @@ public class SemanticAnalyzer
             case SpawnNode spawn:
                 // Spawn ya se maneja en el bucle principal de Analyze para asegurar su posición y unicidad
                 // No hay nada más que analizar directamente en el nodo Spawn aparte de eso.
-                // Si tuviera argumentos, AnalyzeNode(arg) se llamaría aquí.
                 break;
-
-            // Añade más casos para otros tipos de nodos AST si es necesario
-            // Por ejemplo, para LiteralNode, no necesitas hacer nada, simplemente InferType funcionará.
             case LiteralNode _:
                 break;
         }
@@ -209,14 +201,14 @@ public class SemanticAnalyzer
             case VariableNode v:
                 if (!symbols.IsDeclared(v.Name))
                 {
-                    // No lanzar aquí, sino añadir al _errors y retornar un tipo por defecto
+
                     _errors.Add(new SemanticException($"Variable '{v.Name}' no declarada antes de su uso", v.Line, v.Column));
                     return Type.Error; // Retorna un tipo de error para permitir la continuación del análisis
                 }
                 return (Type)symbols.GetType(v.Name);
             
             case UnaryExpressionNode un:
-                var operandType = InferType(un.Operand);
+                Type operandType = InferType(un.Operand);
                 if (operandType == Type.Error) return Type.Error; // Propagar error
 
                 if (operandType != Type.Int)
@@ -227,32 +219,30 @@ public class SemanticAnalyzer
                 return Type.Int;
 
             case BinaryExpressionNode bin:
-                var leftType = InferType(bin.Left);
-                var rightType = InferType(bin.Right);
+                Type leftType = InferType(bin.Left);
+                Type rightType = InferType(bin.Right);
                 if (leftType == Type.Error || rightType == Type.Error) return Type.Error; // Propagar error
 
-                var op = bin.Operator;
+                TokenType op = bin.Operator;
                 return InferBinaryType(op, leftType, rightType, bin.Line, bin.Column);
 
             case FunctionCallNode f:
-                if (!FunctionSignatures.TryGetValue(f.Name, out var sig))
+                if (!FunctionSignatures.TryGetValue(f.Name, out FunctionSignature sig))
                 {
                     _errors.Add(new SemanticException($"Función '{f.Name}' no reconocida", f.Line, f.Column));
                     return Type.Error; // Retorna tipo de error
                 }
 
-                // A diferencia de la validación completa en AnalyzeNode, aquí solo inferimos el tipo de retorno.
-                // Si los argumentos no coinciden, eso ya se debería haber añadido a _errors en AnalyzeNode.
                 return f.Name switch
                 {
                     "GetActualX" => Type.Int,
                     "GetActualY" => Type.Int,
-                    "GetCanvasSize" => Type.Int, // Asumiendo que devuelve un entero o hay una forma de obtener las dimensiones
+                    "GetCanvasSize" => Type.Int,
                     "GetColorCount" => Type.Int,
-                    "IsBrushColor" => Type.Bool, // Corregido: Es un bool
+                    "IsBrushColor" => Type.Bool, 
                     "IsBrushSize" => Type.Bool,
-                    "IsCanvasColor" => Type.Bool, // Corregido: Es un bool
-                    "Color" => Type.Void, // Funciones de comando como Color no devuelven valor
+                    "IsCanvasColor" => Type.Bool,
+                    "Color" => Type.Void,
                     "Size" => Type.Void,
                     "DrawLine" => Type.Void,
                     "DrawRectangle" => Type.Void,
@@ -305,20 +295,10 @@ public class SemanticAnalyzer
         return Type.Error;
     }
 
-    // --- NUEVO: Método para obtener los errores recolectados ---
+
     public List<SemanticException> GetErrors()
     {
         return _errors;
     }
 }
 
-// Necesitarás definir el enum Type si no lo tienes
-// Ejemplo simple para Type, ajústalo según tu implementación real
-public enum Type
-{
-    Int,
-    Bool,
-    String,
-    Void, // Para funciones que no devuelven valor (comandos)
-    Error // Para tipos no inferibles o errores
-}

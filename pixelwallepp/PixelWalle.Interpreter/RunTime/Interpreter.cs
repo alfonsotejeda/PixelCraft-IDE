@@ -1,7 +1,7 @@
 using PixelWalle.Interpreter.AST;
 using PixelWalle.Interpreter.Errors;
 using PixelWalle.Interpreter.Lexer;
-using PixelWalle.Interpreter.RunTime;
+using PixelWalle.Interpreter.Runtime;
 
 namespace PixelWalle.Interpreter.Runtime;
 
@@ -12,7 +12,7 @@ public class Interpreter
     private List<AstNode> _nodes; // Contendrá todas las sentencias del programa
     private int _instructionPointer;
 
-    // --- NUEVAS PROPIEDADES PARA EJECUCIÓN PARCIAL ---
+    // --- NUEVAS PROPIEDADES PARA EJECUCIÓN PARCIAL --- //para usos futuros
     private int _startLine;
     private int _linesToProcess;
 
@@ -49,7 +49,6 @@ public class Interpreter
             }
         }
         
-        // --- Modificación clave aquí: Lógica para ejecución parcial ---
         // Si _startLine es 0 o 1, significa que no se ha especificado un rango
         // o se está iniciando la ejecución desde el principio.
         // Si _linesToProcess es -1, significa ejecutar todo.
@@ -73,20 +72,10 @@ public class Interpreter
 
         while (_instructionPointer < _nodes.Count && statementsProcessedInChunk < maxStatementsInChunk)
         {
-            var stmt = _nodes[_instructionPointer];
+            AstNode stmt = _nodes[_instructionPointer];
             
-            // Si la línea de la sentencia actual excede el rango de líneas a procesar
-            // y no estamos en modo "procesar todo"
             if (_linesToProcess != -1 && stmt.Line >= (_startLine + _linesToProcess))
             {
-                // Detenerse aquí. La siguiente sentencia está fuera del chunk.
-                // Es importante que la sentencia actual (stmt) *esté* dentro del rango
-                // o que sea la primera del chunk y no se exceda el limite por esta sentencia.
-                // Esta verificación es un poco simplista. Si una sentencia empieza en línea N
-                // y se extiende hasta N+X, y N+X > (_startLine + _linesToProcess),
-                // aún así se ejecutaría completa si N está dentro del rango.
-                // Para tu lenguaje, asumiendo que las sentencias son relativamente atómicas
-                // por línea, esto debería ser suficiente.
                 break; 
             }
 
@@ -99,7 +88,7 @@ public class Interpreter
                     break;
 
                 case AssignmentNode assign:
-                    var value = Evaluate(assign.Expression);
+                    Object value = Evaluate(assign.Expression);
                     _state.SetVariable(assign.VariableName, value);
                     break;
 
@@ -108,7 +97,7 @@ public class Interpreter
                     break;
 
                 case GotoNode gotoNode:
-                    var result = Evaluate(gotoNode.Condition);
+                    Object result = Evaluate(gotoNode.Condition);
 
                     bool shouldJump = result switch
                     {
@@ -119,18 +108,13 @@ public class Interpreter
 
                     if (shouldJump)
                     {
-                        // Cuando hay un salto, el nuevo _instructionPointer debe ser el de la etiqueta.
-                        // Luego, *no se incrementa* al final del bucle.
-                        // Y necesitamos salir del chunk si el salto va fuera del rango del chunk actual.
                         int targetIndex = _state.GetLabelIndex(gotoNode.TargetLabel);
                         if (_linesToProcess != -1 && (_nodes[targetIndex].Line < _startLine || _nodes[targetIndex].Line >= (_startLine + _linesToProcess)))
                         {
-                            // Si el salto está fuera del chunk actual, salta, pero terminamos el chunk.
-                            // Esto significa que Godot deberá volver a llamar con el nuevo _startLine.
+
                             _instructionPointer = targetIndex;
                             jumped = true;
-                            // No incrementar statementsProcessedInChunk ya que estamos saliendo del chunk.
-                            // Esto terminará la ejecución del chunk actual.
+
                             break; 
                         }
                         _instructionPointer = targetIndex;
@@ -138,7 +122,7 @@ public class Interpreter
                     }
                     break;
 
-                case LabelNode:
+                case LabelNode labelNode:
                     // Las etiquetas no hacen nada en sí mismas durante la ejecución.
                     break;
 
@@ -166,7 +150,7 @@ public class Interpreter
         _state.CursorY = node.Y;
         _state.Variables["__spawned"] = true;
     }
-    private object Evaluate(AstNode expr)
+    private Object Evaluate(AstNode expr)
     {
         switch (expr)
         {
@@ -175,8 +159,8 @@ public class Interpreter
             case VariableNode var:
                 return _state.GetVariable(var.Name);
             case BinaryExpressionNode bin:
-                var left = Evaluate(bin.Left);
-                var right = Evaluate(bin.Right);
+                Object left = Evaluate(bin.Left);
+                Object right = Evaluate(bin.Right);
 
                 return bin.Operator switch
                 {
@@ -197,7 +181,7 @@ public class Interpreter
                 };
             case FunctionCallNode call:
             {
-                var args = call.Arguments.Select(Evaluate).ToArray();
+                Object[] args = call.Arguments.Select(Evaluate).ToArray();
 
                 switch (call.Name)
                 {
@@ -270,7 +254,7 @@ public class Interpreter
                 }
             }
             case UnaryExpressionNode un:
-                var value = Evaluate(un.Operand);
+                Object value = Evaluate(un.Operand);
                 return un.Operator switch
                 {
                     TokenType.Minus => -(int)value,
@@ -288,105 +272,96 @@ public class Interpreter
         return Evaluate(expr); // Método interno privado
     }
     private void ExecuteFunctionCall(FunctionCallNode call)
-{
-    var args = call.Arguments.Select(Evaluate).ToArray();
-
-    switch (call.Name)
     {
-        case "DrawRectangle":
+        Object[] args = call.Arguments.Select(Evaluate).ToArray();
+
+        switch (call.Name)
         {
-            if (args.Length != 5)
-                throw new InterpreterException($"DrawRectangle espera 5 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
+            case "DrawRectangle":
+            {
+                if (args.Length != 5)
+                    throw new InterpreterException($"DrawRectangle espera 5 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
 
-            int dx = Convert.ToInt32(args[0]);
-            int dy = Convert.ToInt32(args[1]);
-            int distance = Convert.ToInt32(args[2]);
-            int width = Convert.ToInt32(args[3]);
-            int height = Convert.ToInt32(args[4]);
+                int dx = Convert.ToInt32(args[0]);
+                int dy = Convert.ToInt32(args[1]);
+                int distance = Convert.ToInt32(args[2]);
+                int width = Convert.ToInt32(args[3]);
+                int height = Convert.ToInt32(args[4]);
 
-            DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
-            _canvas.DrawRectangle(dx, dy, distance, width, height);
+                DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
+                _canvas.DrawRectangle(dx, dy, distance, width, height);
+                break;
+            }
 
-            // _state.CursorX += dx * distance;
-            // _state.CursorY += dy * distance;
-            break;
+            case "DrawCircle":
+            {
+                if (args.Length != 3)
+                    throw new InterpreterException($"DrawCircle espera 3 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
+
+                int dx = Convert.ToInt32(args[0]);
+                int dy = Convert.ToInt32(args[1]);
+                int radius = Convert.ToInt32(args[2]);
+
+                DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
+                _canvas.DrawCircle(dx, dy, radius);
+                break;
+            }
+
+            case "DrawLine":
+            {
+                if (args.Length != 3)
+                    throw new InterpreterException($"DrawLine espera 3 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
+
+                int dx = Convert.ToInt32(args[0]);
+                int dy = Convert.ToInt32(args[1]);
+                int distance = Convert.ToInt32(args[2]);
+
+                DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
+                _canvas.DrawLine(dx, dy, distance);
+                break;
+            }
+
+            case "Color":
+            {
+                if (args.Length != 1 || args[0] is not string color)
+                    throw new InterpreterException("Color espera 1 argumento de tipo string", call.Line, call.Column);
+
+                _canvas.Color(color);
+                break;
+            }
+
+            case "Size":
+            {
+                if (args.Length != 1)
+                    throw new InterpreterException("Size espera 1 argumento", call.Line, call.Column);
+
+                int size = Convert.ToInt32(args[0]);
+                _canvas.Size(size);
+                break;
+            }
+
+            case "Fill":
+            {
+                if (args.Length != 0)
+                    throw new InterpreterException("La función Fill no acepta argumentos", call.Line, call.Column);
+
+                _canvas.Fill();
+                break;
+            }
+            case "SetCursor":
+            {
+                if (args.Length != 2)
+                    throw new InterpreterException("SetCursor espera 2 argumentos", call.Line, call.Column);
+
+                int x = Convert.ToInt32(args[0]);
+                int y = Convert.ToInt32(args[1]);
+
+                _canvas.SetCursor(x, y);
+                break;
+            }
+
+            default:
+                throw new InterpreterException($"Función desconocida: {call.Name}", call.Line, call.Column);
         }
-
-        case "DrawCircle":
-        {
-            if (args.Length != 3)
-                throw new InterpreterException($"DrawCircle espera 3 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
-
-            int dx = Convert.ToInt32(args[0]);
-            int dy = Convert.ToInt32(args[1]);
-            int radius = Convert.ToInt32(args[2]);
-
-            DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
-            _canvas.DrawCircle(dx, dy, radius);
-
-            // _state.CursorX += dx * radius;
-            // _state.CursorY += dy * radius;
-            break;
-        }
-
-        case "DrawLine":
-        {
-            if (args.Length != 3)
-                throw new InterpreterException($"DrawLine espera 3 argumentos, pero se recibieron {args.Length}", call.Line, call.Column);
-
-            int dx = Convert.ToInt32(args[0]);
-            int dy = Convert.ToInt32(args[1]);
-            int distance = Convert.ToInt32(args[2]);
-
-            DirectionValidator.EnsureValid(dx, dy, call.Line, call.Column);
-            _canvas.DrawLine(dx, dy, distance);
-
-            // _state.CursorX += dx * distance;
-            // _state.CursorY += dy * distance;
-            break;
-        }
-
-        case "Color":
-        {
-            if (args.Length != 1 || args[0] is not string color)
-                throw new InterpreterException("Color espera 1 argumento de tipo string", call.Line, call.Column);
-
-            _canvas.Color(color);
-            break;
-        }
-
-        case "Size":
-        {
-            if (args.Length != 1)
-                throw new InterpreterException("Size espera 1 argumento", call.Line, call.Column);
-
-            int size = Convert.ToInt32(args[0]);
-            _canvas.Size(size);
-            break;
-        }
-
-        case "Fill":
-        {
-            if (args.Length != 0)
-                throw new InterpreterException("La función Fill no acepta argumentos", call.Line, call.Column);
-
-            _canvas.Fill();
-            break;
-        }
-        case "SetCursor":
-        {
-            if (args.Length != 2)
-                throw new InterpreterException("SetCursor espera 2 argumentos", call.Line, call.Column);
-
-            int x = Convert.ToInt32(args[0]);
-            int y = Convert.ToInt32(args[1]);
-
-            _canvas.SetCursor(x, y);
-            break;
-        }
-
-        default:
-            throw new InterpreterException($"Función desconocida: {call.Name}", call.Line, call.Column);
     }
-}
 }

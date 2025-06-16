@@ -3,5 +3,6 @@ public enum Type
     Int,
     Bool,
     String,
-    Error // Para manejar errores de forma segura
+    Void, // Para funciones que no devuelven valor (comandos)
+    Error 
 }
