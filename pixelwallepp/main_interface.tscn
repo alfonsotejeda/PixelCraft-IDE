@@ -129,6 +129,7 @@ expand_mode = 3
 stretch_mode = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="MarginContainer/VBoxContainer/HSplitContainer/Panel/TextureRect"]
+visible = false
 texture_filter = 1
 position = Vector2(193, 232)
 scale = Vector2(0.28125, 0.28125)

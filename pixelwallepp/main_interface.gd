@@ -20,7 +20,7 @@ extends Control
 @onready var image_process_progress_bar = $MarginContainer/VBoxContainer/ToolBar/ImageProcessProgressBar
 @onready var image_process_label = $MarginContainer/VBoxContainer/ToolBar/ImageProcessLabel
 
-@onready var cursor_sprite = $MarginContainer/VBoxContainer/HSplitContainer/Panel/TextureRect/Sprite2D
+#@onready var cursor_sprite = $MarginContainer/VBoxContainer/HSplitContainer/Panel/TextureRect/Sprite2D
 var CLI_PATH: String 
 
 const PIXEL_ART_CELL_SIZE := 4
@@ -83,7 +83,7 @@ func _ready():
 	image_process_label.hide()
 	image_process_progress_bar.value = 0
 
-	_update_cursor_sprite_visibility_and_position()
+	#_update_cursor_sprite_visibility_and_position()
 
 
 func _on_code_changed():
@@ -229,7 +229,7 @@ func _process_backend_output(backend_raw_output: String, exit_code: int, is_run_
 			
 	error_log.text = final_error_message.strip_edges()
 
-	_update_cursor_sprite_visibility_and_position()
+	#_update_cursor_sprite_visibility_and_position()
 
 
 func _save_code_to_temp_file(code: String) -> String:
@@ -264,7 +264,7 @@ func _clear_canvas_frontend():
 	print("[DEBUG] Canvas de TextureRect limpiado en el frontend.")
 	_current_cursor_x = -1
 	_current_cursor_y = -1
-	_update_cursor_sprite_visibility_and_position()
+	#_update_cursor_sprite_visibility_and_position()
 
 
 func _clear_canvas_backend():
@@ -310,7 +310,7 @@ func _clear_canvas_backend():
 		print("[DEBUG] Error al limpiar el canvas del backend:", exit_code, output_clear)
 	
 	print("[DEBUG] BackEnd Limpio")
-	_update_cursor_sprite_visibility_and_position()
+	#_update_cursor_sprite_visibility_and_position()
 
 func _on_clear_button_pressed():
 	print("[DEBUG] Botón 'Clear' presionado.")
@@ -467,51 +467,51 @@ func _on_resize_button_pressed():
 	_clear_canvas_backend()
 	_run_backend()
 
-func _update_cursor_sprite_visibility_and_position():
-	if cursor_sprite:
-		if texture_rect.texture == null or _current_cursor_x == -1 or _current_cursor_y == -1:
-			cursor_sprite.hide()
-			return
-
-		cursor_sprite.show()
-
-		var texture_size = texture_rect.texture.get_size()
-		var rect_size = texture_rect.get_rect().size
-
-		if texture_size.x == 0 or texture_size.y == 0:
-			cursor_sprite.hide()
-			return
-
-		var aspect_ratio_texture = texture_size.x / texture_size.y
-		var aspect_ratio_rect = rect_size.x / rect_size.y
-
-		var actual_image_width: float
-		var actual_image_height: float
-		var offset_x: float = 0.0
-		var offset_y: float = 0.0
-
-		if aspect_ratio_rect > aspect_ratio_texture:
-			actual_image_height = rect_size.y
-			actual_image_width = actual_image_height * aspect_ratio_texture
-			offset_x = (rect_size.x - actual_image_width) / 2.0
-		else:
-			actual_image_width = rect_size.x
-			actual_image_height = actual_image_width / aspect_ratio_texture
-			offset_y = (rect_size.y - actual_image_height) / 2.0
-
-		var pixel_scale_x = actual_image_width / texture_size.x
-		var pixel_scale_y = actual_image_height / texture_size.y
-		
-		var sprite_base_size = cursor_sprite.texture.get_size()
-		var target_sprite_scale_x = pixel_scale_x / sprite_base_size.x
-		var target_sprite_scale_y = pixel_scale_y / sprite_base_size.y
-
-		cursor_sprite.scale = Vector2(target_sprite_scale_x, target_sprite_scale_y)
-		
-		var sprite_scaled_width = cursor_sprite.texture.get_width() * cursor_sprite.scale.x
-		var sprite_scaled_height = cursor_sprite.texture.get_height() * cursor_sprite.scale.y
-		
-		var pixel_center_x = offset_x + (_current_cursor_x * pixel_scale_x) + (pixel_scale_x / 2.0)
-		var pixel_center_y = offset_y + (_current_cursor_y * pixel_scale_y) + (pixel_scale_y / 2.0)
-
-		cursor_sprite.position = Vector2(pixel_center_x, pixel_center_y)
+#func _update_cursor_sprite_visibility_and_position():
+	#if cursor_sprite:
+		#if texture_rect.texture == null or _current_cursor_x == -1 or _current_cursor_y == -1:
+			#cursor_sprite.hide()
+			#return
+#
+		#cursor_sprite.show()
+#
+		#var texture_size = texture_rect.texture.get_size()
+		#var rect_size = texture_rect.get_rect().size
+#
+		#if texture_size.x == 0 or texture_size.y == 0:
+			#cursor_sprite.hide()
+			#return
+#
+		#var aspect_ratio_texture = texture_size.x / texture_size.y
+		#var aspect_ratio_rect = rect_size.x / rect_size.y
+#
+		#var actual_image_width: float
+		#var actual_image_height: float
+		#var offset_x: float = 0.0
+		#var offset_y: float = 0.0
+#
+		#if aspect_ratio_rect > aspect_ratio_texture:
+			#actual_image_height = rect_size.y
+			#actual_image_width = actual_image_height * aspect_ratio_texture
+			#offset_x = (rect_size.x - actual_image_width) / 2.0
+		#else:
+			#actual_image_width = rect_size.x
+			#actual_image_height = actual_image_width / aspect_ratio_texture
+			#offset_y = (rect_size.y - actual_image_height) / 2.0
+#
+		#var pixel_scale_x = actual_image_width / texture_size.x
+		#var pixel_scale_y = actual_image_height / texture_size.y
+		#
+		#var sprite_base_size = cursor_sprite.texture.get_size()
+		#var target_sprite_scale_x = pixel_scale_x / sprite_base_size.x
+		#var target_sprite_scale_y = pixel_scale_y / sprite_base_size.y
+#
+		#cursor_sprite.scale = Vector2(target_sprite_scale_x, target_sprite_scale_y)
+		#
+		#var sprite_scaled_width = cursor_sprite.texture.get_width() * cursor_sprite.scale.x
+		#var sprite_scaled_height = cursor_sprite.texture.get_height() * cursor_sprite.scale.y
+		#
+		#var pixel_center_x = offset_x + (_current_cursor_x * pixel_scale_x) + (pixel_scale_x / 2.0)
+		#var pixel_center_y = offset_y + (_current_cursor_y * pixel_scale_y) + (pixel_scale_y / 2.0)
+#
+		#cursor_sprite.position = Vector2(pixel_center_x, pixel_center_y)

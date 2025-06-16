@@ -15,6 +15,8 @@ public class Interpreter
     // --- NUEVAS PROPIEDADES PARA EJECUCIÓN PARCIAL ---
     private int _startLine;
     private int _linesToProcess;
+
+    
     public int LastExecutedLine { get; private set; } // Para devolver la última línea ejecutada
 
     public Interpreter(ExecutionState state, ICanvas canvas)
